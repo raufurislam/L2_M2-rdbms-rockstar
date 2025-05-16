@@ -160,4 +160,3 @@ INSERT INTO test_table(name) VALUES ('John Doe');
 SELECT * FROM test_table;
 ```
 
----
