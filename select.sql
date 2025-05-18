@@ -24,9 +24,9 @@ VALUES
 ('Noah', 'Garcia', 20, 'B', 'Physics', 'noah.garcia@example.com', '2004-04-10', 'A+', 'France'),
 ('Ava', 'Martinez', 21, 'C', 'Chemistry', 'ava.martinez@example.com', '2003-01-05', 'O+', 'Brazil'),
 ('William', 'Rodriguez', 22, 'A', 'Biology', 'william.rodriguez@example.com', '2002-06-09', 'AB+', 'Spain'),
-('Sophia', 'Hernandez', 19, 'B', 'History', 'sophia.hernandez@example.com', '2005-10-22', 'A-', 'Italy'),
+('Sophia', 'Hernandez', 19, 'B', 'History', NULL, '2005-10-22', 'A-', 'Italy'),
 ('James', 'Lopez', 20, 'A', 'Math', 'james.lopez@example.com', '2004-02-14', 'B+', 'USA'),
-('Isabella', 'Gonzalez', 21, 'C', 'Physics', 'isabella.gonzalez@example.com', '2003-12-03', 'O-', 'Mexico'),
+('Isabella', 'Gonzalez', 21, 'C', 'Physics', NULL, '2003-12-03', 'O-', 'Mexico'),
 ('Benjamin', 'Wilson', 23, 'B', 'Chemistry', 'benjamin.wilson@example.com', '2001-05-01', 'A+', 'Canada'),
 ('Mia', 'Anderson', 18, 'A', 'Biology', 'mia.anderson@example.com', '2006-08-08', 'AB-', 'UK'),
 ('Lucas', 'Thomas', 22, 'C', 'History', 'lucas.thomas@example.com', '2002-03-17', 'B-', 'Australia'),
@@ -153,5 +153,27 @@ SELECT * FROM students
 SELECT * FROM students
     WHERE first_name ILIKE 'a%';
 
+
+-- LIMIT OFFSET -> pagination
+-- LIMIT
+SELECT * FROM students LIMIT 5;
+SELECT * FROM students
+    WHERE country NOT IN ('USA', 'UK', 'Canada') LIMIT 5; 
+
+-- OFFSET
+SELECT * FROM students LIMIT 5 OFFSET 5;
+SELECT * FROM students LIMIT 5 OFFSET 5 * 2;
+
+-- DELETE data 
+DELETE FROM students; -- it can delete whole data. be careful 
+DELETE FROM students 
+    WHERE grade = 'C';
+DELETE FROM students
+    WHERE grade = 'B' AND country = 'USA';
+
+-- UPDATE
+UPDATE students 
+    SET email = 'default@mail.com', age = 30
+    WHERE student_id = 50;
 
 SELECT * FROM students;
