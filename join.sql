@@ -51,7 +51,8 @@ SELECT * FROM post AS p
 SELECT * FROM post AS p 
     RIGHT OUTER JOIN "user" AS u ON p.user_id = u.id;
 
-
+SELECT * FROM employees
+    JOIN departments USING(department_id);
 
 -- Full JOIN
 SELECT * FROM post AS p 
