@@ -1,3 +1,4 @@
+-- practise.sql
 -- module9
 
 -- Creating the employees table
@@ -62,6 +63,26 @@ INSERT INTO employees (employee_name, department_id, salary, hire_date) VALUES
     ('Mia Roberts', 10, 70000.25, '2021-11-20')
 ;
 
+CREATE TABLE orders (
+    order_id SERIAL PRIMARY KEY,
+    customer_id INT,
+    order_date DATE,
+    total_amount DECIMAL(10, 2)
+);
+
+-- Inserting sample data into the orders table
+INSERT INTO orders (customer_id, order_date, total_amount) VALUES 
+    (1, '2022-01-05', 100.50),
+    (2, '2022-01-07', 200.75),
+    (1, '2022-01-08', 150.25),
+    (3, '2022-01-10', 300.00),
+    (2, '2022-01-15', 180.50),
+    (3, '2022-01-20', 220.25),
+    (1, '2022-01-25', 90.00),
+    (2, '2022-01-28', 120.75),
+    (3, '2022-02-01', 250.50),
+    (1, '2022-02-05', 180.25);
+
 -- 1. Inner Join to Retrieve Employee and Department Information
 SELECT * FROM employees
     JOIN departments ON employees.department_id = departments.department_id;
@@ -69,10 +90,34 @@ SELECT * FROM employees
     JOIN departments USING(department_id);
 
 -- 2. Group By Department with Average Salary
-SELECT department_name, avg(salary) as avg_salary FROM employees
+SELECT department_name, round(avg(salary)) as avg_salary FROM employees
     JOIN departments USING(department_id)
     GROUP BY department_name 
 ;
+
+-- 3. Count Employees in Each Department
+SELECT department_name, round(count(employee_id)) FROM employees
+    JOIN departments USING (department_id)
+    GROUP BY department_name;
+
+-- 4. Find the Department name with the Highest Average Salary
+SELECT department_name, round(avg(salary)) as avg_salary FROM employees
+    JOIN departments USING (department_id)
+    GROUP BY department_name
+    ORDER BY  avg_salary DESC
+    LIMIT 1;
+
+-- 5. Count Employees Hired Each Year
+SELECT extract(YEAR FROM hire_date) AS hire_year, count(*) FROM employees
+    GROUP BY hire_year;
+
+-- 6 Find customers who have placed more than 2 orders and calculate the total amount spent by each of these customers.
+SELECT customer_id, count(order_id), sum(total_amount) FROM orders GROUP BY customer_id HAVING count(order_id) > 1;
+
+-- 7 Find the total amount of orders placed each month in the year 2022.
+SELECT extract(MONTH FROM order_date) as month, sum(total_amount) FROM orders WHERE extract(YEAR FROM order_date) = 2022 GROUP BY month;
+
+SELECT * FROM orders;
 
 SELECT * FROM employees;
 SELECT * FROM departments;
