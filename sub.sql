@@ -1,4 +1,4 @@
--- nested query/ sub query 10.2 
+-- nested query/ sub query 10.2-10.3
 CREATE TABLE employees (
     employee_id SERIAL PRIMARY KEY,
     employee_name VARCHAR(50) NOT NULL,
@@ -61,5 +61,5 @@ SELECT department_name, sum(salary) FROM employees GROUP BY department_name;
 SELECT * FROM -- outer query/ main query
     (SELECT department_name, sum(salary) FROM employees GROUP BY department_name) as sum_dept_salary; -- sub query
 
-SELECT * FROM employees
-    WHERE department_name in (SELECT department_name FROM employees WHERE department_name LIKE '%R%')
+SELECT employee_name, salary, department_name FROM employees
+    WHERE department_name in (SELECT department_name FROM employees WHERE department_name LIKE '%R%');
