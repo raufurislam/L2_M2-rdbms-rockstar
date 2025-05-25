@@ -1,175 +1,242 @@
-# PostgreSQL Module 9 Summary (Time, Grouping, Keys, Joins)
+# 🧠 PostgreSQL Advanced Techniques: Subqueries, Views, Procedural SQL, Triggers, Performance & Indexing (10.2–10.9)
 
-This document summarizes the key SQL concepts practiced in PostgreSQL Module 9. The examples and patterns covered here are essential for mastering SQL operations related to time handling, grouping data, foreign key constraints, and performing joins between tables. These concepts are critical for real-world database management and analytics tasks.
+> 🎓 **Goal**: This README summarizes advanced PostgreSQL techniques using real examples and highlights **why they are important**, helping you write smarter queries, automate actions, and optimize performance.
 
 ---
 
-## 9.1 Date & Time Functions
+## 🔁 10.2–10.3: Subqueries (Nested Queries)
 
-### ✅ Show current timezone and timestamp
+### 🧩 What are Subqueries?
+
+A **subquery** is a query inside another query. It helps you:
+
+- Break down complex queries
+- Reuse logic inside SELECT, FROM, or WHERE
+- Improve readability and abstraction
+
+### ✅ Use Cases & Examples
+
+#### 1️⃣ Scalar Subquery (returns a single value)
 
 ```sql
-SHOW timezone;
-SELECT now();
+SELECT * FROM employees
+WHERE salary > (SELECT MAX(salary) FROM employees WHERE department_name = 'HR');
 ```
 
-### ✅ Create table with timestamps
+📌 _This returns employees whose salary is higher than the highest salary in the HR department._
+
+#### 2️⃣ Column Subquery (returns a list)
 
 ```sql
-CREATE TABLE timez (
-  ts TIMESTAMP WITHOUT TIME ZONE,
-  tsz TIMESTAMP WITH TIME ZONE
+SELECT employee_name, salary FROM employees
+WHERE department_name IN (
+    SELECT department_name FROM employees WHERE department_name LIKE '%R%'
 );
-INSERT INTO timez VALUES ('2024-01-12 10:45:00', '2024-01-12 10:45:00');
 ```
 
-### ✅ Date operations
+📌 _This selects employees from departments that contain the letter “R”._
+
+#### 3️⃣ Subquery in SELECT clause
 
 ```sql
-SELECT CURRENT_DATE;
-SELECT now()::DATE;
-SELECT to_char(now(), 'dd/mm/yyyy'); -- format
-SELECT to_char(now(), 'DDD'); -- day of year
-SELECT CURRENT_DATE - INTERVAL '1 year 2 month';
+SELECT *, (SELECT SUM(salary) FROM employees) AS total_salary FROM employees;
 ```
 
-### ✅ Age calculation
+📌 _This shows each employee’s info along with the total salary of all employees._
+
+#### 4️⃣ Subquery in FROM clause
 
 ```sql
-SELECT age(CURRENT_DATE, '2000-07-13');
-SELECT age(CURRENT_DATE, '1999-08-03');
+SELECT * FROM (
+    SELECT department_name, SUM(salary) AS total_salary
+    FROM employees
+    GROUP BY department_name
+) AS dept_salary;
 ```
 
-### ✅ Extract and type casting
-
-```sql
-SELECT extract(YEAR FROM '2000-07-13'::DATE);
-SELECT 1::BOOLEAN;      -- true
-SELECT 'n'::BOOLEAN;    -- false
-```
+📌 _This creates a temporary table of department salary totals that you can further query._
 
 ---
 
-## 9.2 GROUP BY & Aggregation
+## 🔍 10.4: Views
 
-### ✅ Basic group by
+### 🧱 What is a View?
+
+A **view** is a saved SQL query that acts like a virtual table. It simplifies repeated queries and provides a layer of abstraction or security.
+
+### ✨ Why Use Views?
+
+- Simplify complex logic
+- Reuse without rewriting
+- Hide sensitive data (e.g., don't show passwords)
+- Make front-end integration easier
+
+### 🧪 Examples
+
+#### Create a View with Aggregate Function
 
 ```sql
-SELECT country FROM students GROUP BY country;
-SELECT country, COUNT(*), AVG(age) FROM students GROUP BY country;
+CREATE VIEW dept_avg_salary AS
+SELECT department_name, AVG(salary) FROM employees GROUP BY department_name;
 ```
 
-### ✅ HAVING to filter groups
+#### Create a Filtered View
 
 ```sql
-SELECT country, AVG(age) FROM students GROUP BY country HAVING AVG(age) > 22;
-```
-
-### ✅ Group by expression (year of birth)
-
-```sql
-SELECT EXTRACT(YEAR FROM dob) AS birth_year, COUNT(*) FROM students GROUP BY birth_year;
-```
-
----
-
-## 9.3 Foreign Key Constraint (User & Post Example)
-
-### ✅ Create tables with FK and constraints
-
-```sql
-CREATE TABLE "user" (
-  id SERIAL PRIMARY KEY,
-  username VARCHAR(25) NOT NULL
+CREATE VIEW test_view AS
+SELECT employee_name, salary, department_name FROM employees
+WHERE department_name IN (
+    SELECT department_name FROM employees WHERE department_name LIKE '%R%'
 );
+```
 
-CREATE TABLE post (
-  id SERIAL PRIMARY KEY,
-  title TEXT NOT NULL,
-  user_id INTEGER REFERENCES "user"(id) ON DELETE SET DEFAULT DEFAULT 2
+#### Query a View
+
+```sql
+SELECT * FROM dept_avg_salary;
+```
+
+---
+
+## 🛠️ 10.5–10.6: Procedural vs Non-Procedural SQL
+
+### ✅ Non-Procedural SQL (Standard SQL)
+
+- Focuses on **what to do**, not how
+- Example: `SELECT`, `DELETE`, `UPDATE`
+- Simple and concise
+
+```sql
+DELETE FROM employees WHERE employee_id = 5;
+```
+
+### 🧠 Procedural SQL (PL/pgSQL)
+
+- Adds control flow like `IF`, `LOOP`, variables
+- Useful for complex logic, automation, reusable routines
+
+#### Function to Delete by ID
+
+```sql
+CREATE OR REPLACE FUNCTION delete_emp_by_id(p_emp_id INT)
+RETURNS void LANGUAGE SQL AS $$
+    DELETE FROM employees WHERE employee_id = p_emp_id;
+$$;
+
+-- Call the function
+SELECT delete_emp_by_id(28);
+```
+
+📌 _This shows how to wrap standard SQL in a reusable procedure._
+
+---
+
+## 🔔 10.7: Triggers
+
+### ⚡ What is a Trigger?
+
+A **trigger** automatically runs a function when an event (INSERT, UPDATE, DELETE) happens on a table.
+
+### 🎯 Why Use Triggers?
+
+- Track changes or log history
+- Enforce business rules
+- Auto-update other tables
+
+### 🧪 Example: Log Deleted Users
+
+#### Step 1: Create Audit Table
+
+```sql
+CREATE TABLE deleted_users_audit (
+    deleted_user_name VARCHAR(50),
+    deletedAt TIMESTAMP
 );
-
-ALTER TABLE post ALTER COLUMN user_id SET NOT NULL;
 ```
 
-### ✅ Insert data with FK
+#### Step 2: Create Trigger Function
 
 ```sql
-INSERT INTO "user" (username) VALUES ('akash'), ('batash'), ('sagor'), ('nodi');
-INSERT INTO post (title, user_id) VALUES ('Example Title', 1);
+CREATE OR REPLACE FUNCTION save_deleted_user()
+RETURNS TRIGGER LANGUAGE PLPGSQL AS $$
+BEGIN
+    INSERT INTO deleted_users_audit VALUES (OLD.user_name, now());
+    RAISE NOTICE 'Deleted user audit log created';
+    RETURN OLD;
+END
+$$;
 ```
 
-### ✅ FK behavior with invalid and null insertions
+#### Step 3: Create Trigger
 
 ```sql
--- Invalid FK reference
-INSERT INTO post (title, user_id) VALUES ('test', 8); -- Error
-
--- Valid insert
-INSERT INTO post (title, user_id) VALUES ('test2', 3);
-
--- Null insert (not allowed if NOT NULL)
-INSERT INTO post (title, user_id) VALUES ('test3', NULL); -- Error if NOT NULL
+CREATE TRIGGER save_deleted_trigger
+BEFORE DELETE ON my_users
+FOR EACH ROW EXECUTE FUNCTION save_deleted_user();
 ```
 
-### ✅ FK Deletion Behaviors
-
-- `ON DELETE RESTRICT` – prevent delete if referenced
-- `ON DELETE CASCADE` – delete all referencing
-- `ON DELETE SET NULL` – set user_id NULL in `post`
-- `ON DELETE SET DEFAULT` – set to default (e.g. 2)
+#### Step 4: Try It Out
 
 ```sql
-DELETE FROM "user" WHERE id = 4; -- if ON DELETE SET DEFAULT, posts updated
+DELETE FROM my_users WHERE user_name = 'Raufur';
 ```
+
+📌 _Now every deleted user will be saved in the audit table automatically._
 
 ---
 
-## 9.6-9.8 SQL Joins
+## 🚀 10.8–10.9: Performance Optimization & Indexing
 
-### ✅ INNER JOIN
-
-```sql
-SELECT title, username FROM post JOIN "user" ON post.user_id = "user".id;
-SELECT * FROM post p JOIN "user" u ON p.user_id = u.id;
-```
-
-### ✅ LEFT JOIN
+### 🔍 Explain Analyze: See How PostgreSQL Executes Queries
 
 ```sql
-SELECT * FROM post AS p LEFT JOIN "user" AS u ON p.user_id = u.id;
+EXPLAIN ANALYZE
+SELECT * FROM employees WHERE emp_no = '10004';
 ```
 
-### ✅ RIGHT JOIN
+📌 _Shows cost, time, and plan used by PostgreSQL. Helps in debugging and optimizing queries._
+
+### ⚡ Indexes: Speed Up Searches
 
 ```sql
-SELECT * FROM post AS p RIGHT OUTER JOIN "user" AS u ON p.user_id = u.id;
+CREATE INDEX idx_employees_last_name ON employees (last_name);
 ```
 
-### ✅ FULL JOIN
+📌 _Use indexes on frequently searched columns to boost performance._
+
+> ✅ **Best Practice**: Don’t overuse indexes — they speed up reads but slow down writes.
+
+### 📁 View PostgreSQL Data Directory
 
 ```sql
-SELECT * FROM post AS p FULL OUTER JOIN "user" AS u ON p.user_id = u.id;
+SHOW data_directory;
 ```
 
-### ✅ USING clause (if same column name)
-
-```sql
-SELECT * FROM employees JOIN departments USING(department_id);
-```
+📌 _Useful to check where your database physically stores data._
 
 ---
 
-## ✅ Summary
+## 📌 Summary & Best Practices
 
-This module taught essential SQL patterns:
+| Feature        | Use Case                        | Why It Matters                            |
+| -------------- | ------------------------------- | ----------------------------------------- |
+| **Subqueries** | Complex filters, aggregation    | Improves query logic & reuse              |
+| **Views**      | Simplify repeated logic         | Enhances maintainability, security        |
+| **Procedures** | Reusable operations             | Adds flexibility, allows control flow     |
+| **Triggers**   | Automate actions on data change | Useful for logging, enforcing rules       |
+| **Indexes**    | Speed up SELECTs                | Crucial for performance in large tables   |
+| **EXPLAIN**    | Debug/optimize slow queries     | Helps find bottlenecks in query execution |
 
-- How to handle timestamps and format/display them
-- How to group and aggregate data
-- How to use HAVING for filtering grouped results
-- How to create and use foreign keys with constraint options
-- How to perform different types of JOINs for combining relational data
+---
 
-> Mastering these queries builds a strong foundation for real-world database applications and backend systems.
+## 🏁 Final Thoughts
+
+This section covers **real-world skills** for building production-ready databases:
+
+- Clean structure with views and subqueries
+- Logic encapsulation with triggers and functions
+- Performance awareness with `EXPLAIN` and indexing
+
+> 🚀 **Recommendation**: Always test queries with `EXPLAIN`, use views to reduce duplication, and automate repetitive actions with triggers or stored procedures.
 
 ---

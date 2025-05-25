@@ -1,4 +1,4 @@
-/* 10.6
+/* 10.5-10.6
                     @Procedural Approach:
     1. Language Support: Supports procedural languages like PL/pgSQL, PL/Perl, PL/Python, etc.
     2. Complex Logic: Allows for complex logic using control structures like loops, conditionals, and exception handling.
