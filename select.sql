@@ -1,3 +1,4 @@
+-- Active: 1747457371350@@127.0.0.1@5432@ph2
 SELECT * FROM students;
 CREATE TABLE students(
     student_id SERIAL PRIMARY KEY,
